@@ -167,6 +167,7 @@ class challengeloss(nn.Module):
         return C
 
 def get_nsamp(header):
+    print("Header content:", header)
     return int(header.split('\n')[0].split(' ')[3])
 
 
@@ -192,6 +193,7 @@ class dataset:
             tmp['header'] = h
             tmp['record'] = h.replace('.hea','.mat')
             hdr = load_header(h)
+            print("File path: ", h)
             tmp['nsamp'] = get_nsamp(hdr)
             tmp['leads'] = get_leads(hdr)
             tmp['age'] = get_age(hdr)
@@ -411,7 +413,6 @@ def train_part(model,dataset,loss,opt):
             x = x.unsqueeze(2).float().to(DEVICE)
             t = t.to(DEVICE)
             l = l.float().to(DEVICE)
-
             y,p = model(x, l)
             #p = torch.sigmoid(y)
 
@@ -457,7 +458,7 @@ def _training_code(data_directory, model_directory, ensamble_ID):
 
     # negative to positive ratio
     loss_weight = (len(train) - train.summary(output='numpy'))/train.summary(output='numpy')
-
+    loss_weight[np.isinf(loss_weight)] = np.max(loss_weight[np.isfinite(loss_weight)])
 
     # to be saved in resulting model pickle
     train_files = train.files['header'].to_list()
@@ -471,13 +472,16 @@ def _training_code(data_directory, model_directory, ensamble_ID):
 
 
     train = DataLoader(dataset=train,
-                       batch_size=128,
+                       batch_size=64,
                        shuffle=True,
                        num_workers=8,
                        collate_fn=collate,
                        pin_memory=True,
                        drop_last=False)
-
+    
+    print(train.dataset.files.head())
+    # Print the number of entries in the train dataset
+    print("Number of entries in the train dataset:", len(train.dataset))
 
     valid = DataLoader(dataset=valid,
                        batch_size=128,
@@ -491,7 +495,7 @@ def _training_code(data_directory, model_directory, ensamble_ID):
     model = NN(nOUT=26).to(DEVICE)
 
     lossBCE = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(loss_weight).to(DEVICE))
-    opt = optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
+    opt = optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-5)
     scheduler = optim.lr_scheduler.StepLR(opt, step_size=20, gamma=0.1)
     OUTPUT = []
     EPOCHS = 50
@@ -629,5 +633,3 @@ def run_model(model, header, recording):
 # Other functions
 #
 ################################################################################
-
-
