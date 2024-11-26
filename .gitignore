@@ -1,0 +1,14 @@
+# Ignore virtual environment
+ISIBrno/
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore environment variables
+.env
+
+# Ignore IDE specific files
+.vscode/
+*.code-workspace
