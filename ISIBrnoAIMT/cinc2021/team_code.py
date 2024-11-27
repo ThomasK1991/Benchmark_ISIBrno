@@ -24,6 +24,7 @@ from datetime import datetime
 import copy
 from pathlib import Path
 from evaluate_model import load_weights, compute_challenge_metric
+from collections import Counter
 
 DEVICE = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
@@ -449,8 +450,37 @@ def _training_code(data_directory, model_directory, ensamble_ID):
     #train,valid = load_k_fold(0,data_directory)
     header_files, recording_files = find_challenge_files(data_directory)
 
+    # Initialize a Counter to keep track of the class counts
+    class_counts = Counter()
+
+    # Process each file in the test_data_directory
+    for file_name in os.listdir(data_directory):
+        # Process only files with '.hea' extension
+        if file_name.endswith(".hea"):
+            header_path = os.path.join(data_directory, file_name)
+            
+            with open(header_path, 'r') as file:
+                lines = file.readlines()
+                
+                # Look for the line that starts with "#Dx:"
+                for line in lines:
+                    if line.startswith("#Dx:"):
+                        # Extract the Dx classes from the line
+                        dx_classes = line.strip().replace("#Dx:", "").split(',')
+                        # Increment the count for each class found
+                        for dx_class in dx_classes:
+                            dx_class = dx_class.strip()  # Clean up whitespace
+                            if dx_class in dataset.classes:
+                                class_counts[dx_class] += 1
+
+    # Print the results
+    print("Class Counts:")
+    for cls in dataset.classes:
+        print(f"{cls}: {class_counts[cls]}")
+
+    x = input()
     full_dataset = dataset(header_files)
-    print(full_dataset.summary('pandas'))
+    #print(full_dataset.summary('pandas'))
     train,valid = full_dataset.train_valid_split(test_size=0.2)
 
     valid.files = valid.files[valid.files['nsamp'] <= 8192]
