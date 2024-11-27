@@ -464,9 +464,17 @@ def _training_code(data_directory, model_directory, ensamble_ID):
                 
                 # Look for the line that starts with "#Dx:"
                 for line in lines:
-                    if line.startswith("#Dx:"):
+                    if line.startswith("#Dx:",):
                         # Extract the Dx classes from the line
                         dx_classes = line.strip().replace("#Dx:", "").split(',')
+                        # Increment the count for each class found
+                        for dx_class in dx_classes:
+                            dx_class = dx_class.strip()  # Clean up whitespace
+                            if dx_class in dataset.classes:
+                                class_counts[dx_class] += 1
+                    if line.startswith("# Dx:",):
+                        # Extract the Dx classes from the line
+                        dx_classes = line.strip().replace("# Dx:", "").split(',')
                         # Increment the count for each class found
                         for dx_class in dx_classes:
                             dx_class = dx_class.strip()  # Clean up whitespace
@@ -528,7 +536,7 @@ def _training_code(data_directory, model_directory, ensamble_ID):
     opt = optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-5)
     scheduler = optim.lr_scheduler.StepLR(opt, step_size=20, gamma=0.1)
     OUTPUT = []
-    EPOCHS = 50
+    EPOCHS = 2
     for epoch in range(EPOCHS):
         print(f"============================[{epoch}]============================")
         train_auprc = train_part(model,train,lossBCE,opt)
