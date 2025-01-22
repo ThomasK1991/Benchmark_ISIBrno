@@ -503,11 +503,9 @@ def _training_code(data_directory, model_directory, ensamble_ID):
     for cls in dataset.classes:
         print(f"{cls}: {class_counts[cls]}")
 
-    x = input()
   
     full_dataset = dataset(header_files)
     print(full_dataset.class_proportions())
-    x = input()
 
     train,valid = full_dataset.train_valid_split(test_size=0.2)
 
