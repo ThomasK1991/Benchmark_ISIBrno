@@ -103,7 +103,7 @@ def get_leads(header):
 def get_age(header):
     age = None
     for l in header.split('\n'):
-        if l.strip().startswith('#Age'):
+        if l.strip().startswith('#Age') or l.strip().startswith('# Age'):
             try:
                 age = float(l.split(': ')[1].strip())
             except:
@@ -114,7 +114,7 @@ def get_age(header):
 def get_sex(header):
     sex = None
     for l in header.split('\n'):
-        if l.strip().startswith('#Sex'):
+        if l.strip().startswith('#Sex') or l.strip().startswith('# Sex'):
             try:
                 sex = l.split(': ')[1].strip()
             except:
@@ -202,7 +202,7 @@ def get_baselines(header, leads):
 def get_labels(header):
     labels = list()
     for l in header.split('\n'):
-        if l.strip().startswith('#Dx'):
+        if l.strip().startswith('#Dx') or l.strip().startswith('# Dx'):
             try:
                 entries = l.split(': ')[1].split(',')
                 for entry in entries:

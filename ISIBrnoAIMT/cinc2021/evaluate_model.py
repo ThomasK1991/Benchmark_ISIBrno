@@ -22,7 +22,7 @@ import pandas as pd
 from tabulate import tabulate
 def evaluate_model(label_directory, output_directory):
     # Identify the weights and the SNOMED CT code for the sinus rhythm class.
-    weights_file = 'weights.csv'
+    weights_file = r"C:\Users\Thomas Kaprielian\Documents\Master's Thesis\Benchmarking\ISIBrnoAIMT (1)\ISIBrnoAIMT\cinc2021\weights.csv"
     sinus_rhythm = set(['426783006'])
 
     # Load the scored classes and the weights for the Challenge metric.

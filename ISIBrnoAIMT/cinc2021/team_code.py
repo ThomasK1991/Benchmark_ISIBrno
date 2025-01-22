@@ -25,6 +25,7 @@ import copy
 from pathlib import Path
 from evaluate_model import load_weights, compute_challenge_metric
 from collections import Counter
+import matplotlib.pyplot as plt
 
 DEVICE = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
@@ -38,7 +39,7 @@ class optim_genetics:
     def __init__(self, target, outputs, classes):
         self.target = target
         self.outputs = outputs
-        weights_file = './weights.csv'
+        weights_file = r"C:\Users\Thomas Kaprielian\Documents\Master's Thesis\Benchmarking\ISIBrnoAIMT (1)\ISIBrnoAIMT\cinc2021\weights.csv"
         self.normal_class = '426783006'
         equivalent_classes = [['713427006', '59118001'],
                               ['284470004', '63593006'],
@@ -83,6 +84,10 @@ def find_thresholds(filename,model_directory):
     f1rocT = np.zeros((N,))
 
     for j in range(N):
+        if np.sum(t[:, j]) == 0:  # No positive samples for this class
+            print(f"No positive samples for class {j}. Skipping...")
+            continue  # Skip further calculations for this class
+
         prc, rec, thr = precision_recall_curve(y_true=t[:, j], probas_pred=y[:, j])
         fscore = 2 * prc * rec / (prc + rec)
         idx = np.nanargmax(fscore)
@@ -145,7 +150,7 @@ class mytqdm(tqdm):
 class challengeloss(nn.Module):
     def __init__(self):
         super(challengeloss,self).__init__()
-        weights_file = './weights.csv'
+        weights_file = r"C:\Users\Thomas Kaprielian\Documents\Master's Thesis\Benchmarking\ISIBrnoAIMT (1)\ISIBrnoAIMT\cinc2021\weights.csv"
         normal_class = '426783006'
         equivalent_classes = [['713427006', '59118001'],
                               ['284470004', '63593006'],
@@ -194,7 +199,6 @@ class dataset:
             tmp['header'] = h
             tmp['record'] = h.replace('.hea','.mat')
             hdr = load_header(h)
-            print("File path: ", h)
             tmp['nsamp'] = get_nsamp(hdr)
             tmp['leads'] = get_leads(hdr)
             tmp['age'] = get_age(hdr)
@@ -202,7 +206,10 @@ class dataset:
             tmp['dx'] = get_labels(hdr)
             tmp['fs'] = get_frequency(hdr)
             tmp['target'] = np.zeros((26,))
-            tmp['dx'] = replace_equivalent_classes(tmp['dx'],dataset.equivalent_classes)
+            print(f"Original dx for file {h}: {tmp['dx']}")
+            tmp['dx'] = replace_equivalent_classes(tmp['dx'], dataset.equivalent_classes)
+            print(f"Replaced dx for file {h}: {tmp['dx']}")
+
             for dx in tmp['dx']:
                 # in SNOMED code is in scored classes
                 if dx in dataset.classes:
@@ -280,6 +287,16 @@ class dataset:
         data,lead_indicator = lead_exctractor.get(data,self.num_leads,lead_indicator)
 
         return data,target,lead_indicator
+    
+    def class_proportions(self):
+        class_totals = self.summary(output='numpy')  # Total counts per class
+        total_samples = len(self)  # Total number of samples
+        proportions = class_totals / total_samples  # Calculate proportions
+        return pd.DataFrame({
+            'Class': dataset.classes,
+            'Count': class_totals,
+            'Proportion': proportions
+        })
 
 
 
@@ -487,8 +504,11 @@ def _training_code(data_directory, model_directory, ensamble_ID):
         print(f"{cls}: {class_counts[cls]}")
 
     x = input()
+  
     full_dataset = dataset(header_files)
-    #print(full_dataset.summary('pandas'))
+    print(full_dataset.class_proportions())
+    x = input()
+
     train,valid = full_dataset.train_valid_split(test_size=0.2)
 
     valid.files = valid.files[valid.files['nsamp'] <= 8192]
@@ -517,7 +537,7 @@ def _training_code(data_directory, model_directory, ensamble_ID):
                        pin_memory=True,
                        drop_last=False)
     
-    print(train.dataset.files.head())
+    # print(train.dataset.files.head())
     # Print the number of entries in the train dataset
     print("Number of entries in the train dataset:", len(train.dataset))
 
@@ -663,7 +683,7 @@ def run_model(model, header, recording):
         labels = q >= thresholds
         out_labels[i,:] = labels
     labels = np.median(out_labels,axis=0)
-    labels = np.array(labels,dtype=np.int)
+    labels = np.array(labels,dtype=int)
     return classes, labels, q
 
 ################################################################################
