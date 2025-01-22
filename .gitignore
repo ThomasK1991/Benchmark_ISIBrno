@@ -12,3 +12,8 @@ __pycache__/
 # Ignore IDE specific files
 .vscode/
 *.code-workspace
+
+#Ignore Data Folders
+ISIBrnoAIMT\cinc2021/model/
+ISIBrnoAIMT\cinc2021/test_data/
+ISIBrnoAIMT\cinc2021/test_outputs/
