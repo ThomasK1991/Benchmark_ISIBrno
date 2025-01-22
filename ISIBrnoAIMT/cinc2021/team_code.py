@@ -39,7 +39,7 @@ class optim_genetics:
     def __init__(self, target, outputs, classes):
         self.target = target
         self.outputs = outputs
-        weights_file = r"C:\Users\Thomas Kaprielian\Documents\Master's Thesis\Benchmarking\ISIBrnoAIMT (1)\ISIBrnoAIMT\cinc2021\weights.csv"
+        weights_file = r"/users/newc6477/Benchmark_ISIBrno/ISIBrnoAIMT/cinc2021/weights.csv"
         self.normal_class = '426783006'
         equivalent_classes = [['713427006', '59118001'],
                               ['284470004', '63593006'],
@@ -150,7 +150,7 @@ class mytqdm(tqdm):
 class challengeloss(nn.Module):
     def __init__(self):
         super(challengeloss,self).__init__()
-        weights_file = r"C:\Users\Thomas Kaprielian\Documents\Master's Thesis\Benchmarking\ISIBrnoAIMT (1)\ISIBrnoAIMT\cinc2021\weights.csv"
+        weights_file = r"/users/newc6477/Benchmark_ISIBrno/ISIBrnoAIMT/cinc2021/weights.csv"
         normal_class = '426783006'
         equivalent_classes = [['713427006', '59118001'],
                               ['284470004', '63593006'],
