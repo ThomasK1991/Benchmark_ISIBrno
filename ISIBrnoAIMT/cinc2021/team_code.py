@@ -109,8 +109,8 @@ def find_thresholds(filename,model_directory):
     population[100] = f1rocT
     population[101] = f1prcT
     bounds = [(0, 1) for i in range(N)]
-    print(optim_genetics)
-    x = input()
+    #print("Optim Genetics")
+    #print(optim_genetics)
     result = differential_evolution(optim_genetics(t, y, classes), bounds=bounds, disp=True, init=population, workers=-1)
     print(result)
     select4deployment(models[model_idx]['model'], thresholds=result.x,classes=classes, info='',model_directory=model_directory)
@@ -174,7 +174,7 @@ class challengeloss(nn.Module):
         return C
 
 def get_nsamp(header):
-    print("Header content:", header)
+    #print("Header content:", header)
     return int(header.split('\n')[0].split(' ')[3])
 
 
@@ -191,11 +191,12 @@ class dataset:
                           ['284470004', '63593006'],
                           ['427172004', '17338001'],
                           ['733534002','164909002']]
-    def __init__(self,header_files):
+    def __init__(self,header_files,):
         self.files = []
         self.sample = True
         self.num_leads = None
-        for h in tqdm(header_files):
+        for h in tqdm(header_files, disable = True):
+
             tmp = dict()
             tmp['header'] = h
             tmp['record'] = h.replace('.hea','.mat')
@@ -207,9 +208,7 @@ class dataset:
             tmp['dx'] = get_labels(hdr)
             tmp['fs'] = get_frequency(hdr)
             tmp['target'] = np.zeros((26,))
-            #print(f"Original dx for file {h}: {tmp['dx']}")
             tmp['dx'] = replace_equivalent_classes(tmp['dx'], dataset.equivalent_classes)
-            #print(f"Replaced dx for file {h}: {tmp['dx']}")
 
             for dx in tmp['dx']:
                 # in SNOMED code is in scored classes
@@ -420,11 +419,15 @@ def valid_part(model,dataset):
     auprc = average_precision_score(y_true=targets, y_score=outputs)
     return auprc,targets,outputs
 
-def train_part(model,dataset,loss,opt):
+def train_part(model, dataset, loss, opt):
     targets = []
     outputs = []
+    total_loss = 0  # To accumulate loss values
+    num_batches = 0  # To count the number of batches
+    
     model.train()
     chloss = challengeloss()
+    
     with mytqdm(dataset) as pbar:
         for i, (x, t, l) in enumerate(pbar):
             opt.zero_grad()
@@ -432,13 +435,18 @@ def train_part(model,dataset,loss,opt):
             x = x.unsqueeze(2).float().to(DEVICE)
             t = t.to(DEVICE)
             l = l.float().to(DEVICE)
-            y,p = model(x, l)
-            #p = torch.sigmoid(y)
-
-            M = chloss(t,p)
+            y, p = model(x, l)
+            
+            # Calculate different loss components
+            M = chloss(t, p)
             N = loss(input=y, target=t)
-            Q = torch.mean(-4*p*(p-1))
+            Q = torch.mean(-4 * p * (p - 1))
+            
+            # Final combined loss
             J = N - M + Q
+            total_loss += J.item()  # Accumulate the loss
+            num_batches += 1  # Count the batch
+            
             J.backward()
             pbar.set_postfix(np.array([M.data.cpu().numpy(),
                                        N.data.cpu().numpy(),
@@ -448,10 +456,17 @@ def train_part(model,dataset,loss,opt):
 
             targets.append(t.data.cpu().numpy())
             outputs.append(p.data.cpu().numpy())
+        
+        # Calculate average loss over all batches
+        avg_loss = total_loss / num_batches if num_batches > 0 else 0
+        
+        # Calculate AUPRC score
         targets = np.concatenate(targets, axis=0)
         outputs = np.concatenate(outputs, axis=0)
         auprc = average_precision_score(y_true=targets, y_score=outputs)
-    return auprc
+    
+    return auprc, avg_loss
+
 
 
 def training_code(data_directory, model_directory):
@@ -500,12 +515,10 @@ def _training_code(data_directory, model_directory, ensamble_ID):
                                 class_counts[dx_class] += 1
 
 
-  
     full_dataset = dataset(header_files)
     print(full_dataset.class_proportions())
 
     train,valid = full_dataset.train_valid_split(test_size=0.2)
-
     valid.files = valid.files[valid.files['nsamp'] <= 8192]
     valid.files.reset_index(drop=True,inplace=True)
 
@@ -551,23 +564,47 @@ def _training_code(data_directory, model_directory, ensamble_ID):
     opt = optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)  # L2 regularization matches the description
     scheduler = optim.lr_scheduler.StepLR(opt, step_size=20, gamma=0.1)
 
+    train_losses = []  # To store training losses
+
     OUTPUT = []
     EPOCHS = 50
     for epoch in range(EPOCHS):
         print(f"============================[{epoch}]============================")
-        train_auprc = train_part(model,train,lossBCE,opt)
-        print(train_auprc)
+        
+        # Training phase
+        train_auprc, train_loss = train_part(model, train, lossBCE, opt)
+        print(f"Train AUPRC: {train_auprc}, Train Loss: {train_loss}")
+        train_losses.append(train_loss)  # Save training loss
 
-        valid_auprc,valid_targets,valid_outputs = valid_part(model,valid)
-        print(valid_auprc)
+        # Validation phase
+        valid_auprc, valid_targets, valid_outputs = valid_part(model, valid)
 
-        OUTPUT.append({'epoch':epoch,
-                       'model':copy.deepcopy(model).cpu().state_dict(),
-                       'train_auprc':train_auprc,
-                       'valid_auprc':valid_auprc,
-                       'valid_targets':valid_targets,
-                       'valid_outputs':valid_outputs})
+        OUTPUT.append({'epoch': epoch,
+                       'model': copy.deepcopy(model).cpu().state_dict(),
+                       'train_auprc': train_auprc,
+                       'valid_auprc': valid_auprc,
+                       'valid_targets': valid_targets,
+                       'valid_outputs': valid_outputs})
         scheduler.step()
+
+    # Get the directory where the script is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Define the path to save the plot in the script's directory
+    plot_path = os.path.join(script_dir, f'training_loss_plot_{ensamble_ID}.png')
+
+    # Save the plot
+    plt.figure(figsize=(10, 6))
+    plt.plot(range(EPOCHS), train_losses, label='Training Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Training Loss Over Epochs')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(plot_path, format='png')
+    plt.close()
+
+    print(f"Loss plot saved to {plot_path}")
 
     name = Path(model_directory, f'PROGRESS_{ensamble_ID}.pickle')
     with open(name, 'wb') as handle:
