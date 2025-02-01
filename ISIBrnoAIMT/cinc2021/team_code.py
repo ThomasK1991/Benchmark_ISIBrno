@@ -109,7 +109,7 @@ def find_thresholds(filename,model_directory):
     population[100] = f1rocT
     population[101] = f1prcT
     bounds = [(0, 1) for i in range(N)]
-
+    print(optim_genetics)
     result = differential_evolution(optim_genetics(t, y, classes), bounds=bounds, disp=True, init=population, workers=-1)
     print(result)
     select4deployment(models[model_idx]['model'], thresholds=result.x,classes=classes, info='',model_directory=model_directory)
