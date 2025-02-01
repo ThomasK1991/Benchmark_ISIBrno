@@ -150,10 +150,11 @@ def load_labels(label_files, classes):
     for i in range(num_recordings):
         header = load_header(label_files[i])
         y = set(get_labels(header))
+        
         for j, x in enumerate(classes):
             if x & y:
                 labels[i, j] = 1
-
+        
     return labels
 
 # Load outputs from output files.

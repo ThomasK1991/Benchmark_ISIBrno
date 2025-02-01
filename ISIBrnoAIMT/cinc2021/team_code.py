@@ -206,9 +206,9 @@ class dataset:
             tmp['dx'] = get_labels(hdr)
             tmp['fs'] = get_frequency(hdr)
             tmp['target'] = np.zeros((26,))
-            print(f"Original dx for file {h}: {tmp['dx']}")
+            #print(f"Original dx for file {h}: {tmp['dx']}")
             tmp['dx'] = replace_equivalent_classes(tmp['dx'], dataset.equivalent_classes)
-            print(f"Replaced dx for file {h}: {tmp['dx']}")
+            #print(f"Replaced dx for file {h}: {tmp['dx']}")
 
             for dx in tmp['dx']:
                 # in SNOMED code is in scored classes
