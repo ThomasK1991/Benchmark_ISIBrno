@@ -109,7 +109,8 @@ def find_thresholds(filename,model_directory):
     population[100] = f1rocT
     population[101] = f1prcT
     bounds = [(0, 1) for i in range(N)]
-
+    print(optim_genetics)
+    x = input()
     result = differential_evolution(optim_genetics(t, y, classes), bounds=bounds, disp=True, init=population, workers=-1)
     print(result)
     select4deployment(models[model_idx]['model'], thresholds=result.x,classes=classes, info='',model_directory=model_directory)
@@ -206,9 +207,9 @@ class dataset:
             tmp['dx'] = get_labels(hdr)
             tmp['fs'] = get_frequency(hdr)
             tmp['target'] = np.zeros((26,))
-            print(f"Original dx for file {h}: {tmp['dx']}")
+            #print(f"Original dx for file {h}: {tmp['dx']}")
             tmp['dx'] = replace_equivalent_classes(tmp['dx'], dataset.equivalent_classes)
-            print(f"Replaced dx for file {h}: {tmp['dx']}")
+            #print(f"Replaced dx for file {h}: {tmp['dx']}")
 
             for dx in tmp['dx']:
                 # in SNOMED code is in scored classes
