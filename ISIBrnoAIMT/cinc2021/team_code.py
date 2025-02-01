@@ -524,7 +524,7 @@ def _training_code(data_directory, model_directory, ensamble_ID):
 
 
     train = DataLoader(dataset=train,
-                       batch_size=64,
+                       batch_size=128,
                        shuffle=True,
                        num_workers=8,
                        collate_fn=collate,
@@ -533,7 +533,7 @@ def _training_code(data_directory, model_directory, ensamble_ID):
     
     # print(train.dataset.files.head())
     # Print the number of entries in the train dataset
-    print("Number of entries in the train dataset:", len(train.dataset))
+    #print("Number of entries in the train dataset:", len(train.dataset))
 
     valid = DataLoader(dataset=valid,
                        batch_size=128,
@@ -547,10 +547,11 @@ def _training_code(data_directory, model_directory, ensamble_ID):
     model = NN(nOUT=26).to(DEVICE)
 
     lossBCE = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(loss_weight).to(DEVICE))
-    opt = optim.Adam(model.parameters(), lr=1e-5, weight_decay=1e-5)
+    opt = optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)  # L2 regularization matches the description
     scheduler = optim.lr_scheduler.StepLR(opt, step_size=20, gamma=0.1)
+
     OUTPUT = []
-    EPOCHS = 2
+    EPOCHS = 50
     for epoch in range(EPOCHS):
         print(f"============================[{epoch}]============================")
         train_auprc = train_part(model,train,lossBCE,opt)
