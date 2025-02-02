@@ -56,7 +56,7 @@ fi
 # Define paths
 PYTHON_SCRIPT="/users/newc6477/Benchmark_ISIBrno/ISIBrnoAIMT/cinc2021/test_model.py"
 MODEL_PATH="/users/newc6477/Benchmark_ISIBrno/ISIBrnoAIMT/cinc2021/model"
-DATA_PATH="/data/newc6477/Test_data/test_data"
+DATA_PATH="/data/newc6477/physionet/train"
 OUTPUT_PATH="/users/newc6477/Benchmark_ISIBrno/ISIBrnoAIMT/cinc2021/outputs"
 
 # Run your Python script with all required arguments
